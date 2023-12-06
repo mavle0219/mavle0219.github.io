@@ -13,15 +13,57 @@ $select_profile = $conn->prepare("SELECT * FROM `users` WHERE id = ?");
 $select_profile->execute([$admin]);
 $fetch_profile = $select_profile->fetch(PDO::FETCH_ASSOC);
 
-  // Function to calculate age from date of birth
-  function calculateAge($dob)
-  {
-    $today = new DateTime('today');
-    $birthdate = new DateTime($dob);
-    $age = $birthdate->diff($today)->y;
-    return $age;
-  }
+// Function to calculate age from date of birth
+function calculateAge($dob)
+{
+  $today = new DateTime('today');
+  $birthdate = new DateTime($dob);
+  $age = $birthdate->diff($today)->y;
+  return $age;
+}
 
+// Check if the deletion form was submitted
+if ($_SERVER["REQUEST_METHOD"] === "GET" && isset($_GET["sch_id"])) {
+  $schId = $_GET["sch_id"];
+
+  try {
+    // Check if the scholar exists
+    $stmt = $conn->prepare("SELECT * FROM `scholar` WHERE sch_id = ?");
+    $stmt->execute([$schId]);
+    $scholar = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($scholar) {
+      // Update the sch_arch column to 1
+      $stmtUpdate = $conn->prepare("UPDATE `scholar` SET sch_arch = 1 WHERE sch_id = ?");
+      $stmtUpdate->execute([$schId]);
+
+      // Audit log
+      $auditlogin = $conn->prepare("INSERT INTO `audit`(role, username, action) VALUES(?,?,?)");
+      $auditlogin->execute(["admin", $fetch_profile['username'], "archive scholar"]);
+
+      echo "<script>
+              document.addEventListener('DOMContentLoaded', (event) => {
+              Swal.fire({
+                  icon: 'success',
+                  title: 'Success',
+                  text: 'Scholar Archived!',
+                  showConfirmButton: false,
+                  timer: 1000
+              }).then(function () {
+                  window.location.href = 'ascholist.php';
+              });
+              });
+          </script>";
+    } else {
+      echo "No record found with sch_id = $schId.";
+    }
+  } catch (PDOException $e) {
+    echo "Error: " . $e->getMessage();
+  }
+}
+
+
+// Process the form data for adding a new scholar
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["submit"])) {
   // Retrieve form data
   $ben_type = $_POST["ben_type"];
@@ -46,23 +88,22 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["submit"])) {
 
   if ($insertQuery) {
     echo "<script>
-      document.addEventListener('DOMContentLoaded', (event) => {
-      Swal.fire({
-          icon: 'success',
-          title: 'Success',
-          text: 'New Scholar Added!',
-          showConfirmButton: false,
-          timer: 1500
-      }).then(function () {
-          window.location.href = 'ascholist.php';
-      });
-  });
-</script>";
+            document.addEventListener('DOMContentLoaded', (event) => {
+            Swal.fire({
+                icon: 'success',
+                title: 'Success',
+                text: 'New Scholar Added!',
+                showConfirmButton: false,
+                timer: 1500
+            }).then(function () {
+                window.location.href = 'ascholist.php';
+            });
+        });
+        </script>";
   } else {
     header('location: ascholist.php');
   }
 }
-
 ?>
 
 <!DOCTYPE html>
@@ -122,8 +163,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["submit"])) {
       <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
         <div class="app-brand demo">
           <a href="adboard.php" class="app-brand-link">
-          <span class="app-brand-logo demo">
-            <span class="app-brand-text demo menu-text fw-bold ms-2" style="text-transform: uppercase;">GSP MIS</span>
+            <span class="app-brand-logo demo">
+              <span class="app-brand-text demo menu-text fw-bold ms-2" style="text-transform: uppercase;">GSP MIS</span>
           </a>
 
           <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto">
@@ -160,6 +201,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["submit"])) {
                       <div class="text-truncate" data-i18n="Beneficiaries List">Beneficiaries List</div>
                     </a>
                   </li>
+                  <li class="menu-item">
+                    <a href="archben.php" class="menu-link">
+                      <div class="text-truncate" data-i18n="Beneficiaries Archives">Beneficiaries Archives</div>
+                    </a>
+                  </li>
                 </ul>
               </li>
               <li class="menu-item open">
@@ -170,6 +216,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["submit"])) {
                   <li class="menu-item active">
                     <a href="ascholist.php" class="menu-link">
                       <div class="text-truncate" data-i18n="Scholars List">Scholars List</div>
+                    </a>
+                  </li>
+                  <li class="menu-item">
+                    <a href="archscho.php" class="menu-link">
+                      <div class="text-truncate" data-i18n="Scholars Archives">Scholars Archives</div>
                     </a>
                   </li>
                 </ul>
@@ -189,12 +240,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["submit"])) {
             </ul>
           </li>
           <li class="menu-header small text-uppercase"><span class="menu-header-text">Program Management</span></li>
-          <li class="menu-item">
-            <a href="acal.php" class="menu-link">
-              <i class="menu-icon tf-icons bx bx bxs-calendar"></i>
-              <div class="text-truncate" data-i18n="Calendar">Calendar</div>
-            </a>
-          </li>
           <li class="menu-item">
             <a href="javascript:void(0);" class="menu-link menu-toggle">
               <i class="menu-icon tf-icons bx bxs-donate-heart"></i>
@@ -221,11 +266,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["submit"])) {
                   <li class="menu-item">
                     <a href="amedmissre.php" class="menu-link">
                       <div class="text-truncate" data-i18n="Medical Mission">Medical Mission</div>
-                    </a>
-                  </li>
-                  <li class="menu-item">
-                    <a href="amedassre.php" class="menu-link">
-                      <div class="text-truncate" data-i18n="Medical Assistance">Medical Assistance</div>
                     </a>
                   </li>
                 </ul>
@@ -379,26 +419,47 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["submit"])) {
           <div class="container-xxl flex-grow-1 container-p-y">
             <h4 class="py-3 mb-4"><span class="text-muted fw-light">Scholars /</span> Scholars List</h4>
             <div class="row g-4 mb-4">
-                <div class="col-sm-6 col-xl-3">
-                  <div class="card card-border-shadow-success h-100">
-                    <div class="card-body">
-                      <div class="d-flex align-items-start justify-content-between">
-                        <div class="content-left">
-                          <span>Scholars</span>
-                          <div class="d-flex align-items-end mt-2">
-                            <h4 class="mb-0 me-2"><?php $numbef = $conn->query('SELECT COUNT(*) from `scholar`')->fetchColumn(); echo $numbef; ?></h4>
-                          </div>
+              <div class="col-sm-6 col-xl-3">
+                <div class="card card-border-shadow-primary h-100">
+                  <div class="card-body">
+                    <div class="d-flex align-items-start justify-content-between">
+                      <div class="content-left">
+                        <span>Total Scholars</span>
+                        <div class="d-flex align-items-end mt-2">
+                          <h4 class="mb-0 me-2"><?php $numbef = $conn->query('SELECT COUNT(*) from `scholar`')->fetchColumn();
+                                                echo $numbef; ?></h4>
                         </div>
-                        <div class="avatar">
-                          <span class="avatar-initial rounded bg-label-success">
+                      </div>
+                      <div class="avatar">
+                        <span class="avatar-initial rounded bg-label-primary">
                           <i class="bx bxs-graduation"></i>
-                          </span>
-                        </div>
+                        </span>
                       </div>
                     </div>
                   </div>
                 </div>
-          </div>
+              </div>
+              <div class="col-sm-6 col-xl-3">
+                <div class="card card-border-shadow-success h-100">
+                  <div class="card-body">
+                    <div class="d-flex align-items-start justify-content-between">
+                      <div class="content-left">
+                        <span>Active Scholars</span>
+                        <div class="d-flex align-items-end mt-2">
+                          <h4 class="mb-0 me-2"><?php $numbef = $conn->query('SELECT COUNT(*) from `scholar` where sch_arch = 0')->fetchColumn();
+                                                echo $numbef; ?></h4>
+                        </div>
+                      </div>
+                      <div class="avatar">
+                        <span class="avatar-initial rounded bg-label-success">
+                          <i class="bx bxs-graduation"></i>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
             <ul class="nav nav-pills flex-column flex-md-row mb-3">
               <button type="button" class="btn btn-label-success" data-bs-toggle="modal" data-bs-target="#modalCenteras"><i class='bx bx-plus'>&nbsp</i> Add Scholar
               </button>
@@ -434,7 +495,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["submit"])) {
                         </div>
                       </div>
                       <div class="row">
-                      <div class="col mb-3">
+                        <div class="col mb-3">
                           <label for="dobExLarge" class="form-label">Date of Birth</label>
                           <input type="date" class="form-control" placeholder="YYYY-MM-DD" id="dobExLarge" name="sch_dob" required />
                         </div>
@@ -490,27 +551,27 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["submit"])) {
                   </div>
                 </div>
               </div>
-              </form>
+            </form>
           </div>
         </div>
-        
+
 
 
 
         <!-- Footer -->
-          <footer class="content-footer footer bg-footer-theme">
-            <div class="container-xxl d-flex flex-wrap justify-content-between py-2 flex-md-row flex-column">
-              <div class="mb-2 mb-md-0">
-                ©
-                <script>
-                  document.write(new Date().getFullYear());
-                </script>
-                , made with ❤️ by Mavle (IT-05)
-              </div>
-              <div class="d-none d-lg-inline-block">The Good Shepherd Parish Web-Based Management Information System
-              </div>
+        <footer class="content-footer footer bg-footer-theme">
+          <div class="container-xxl d-flex flex-wrap justify-content-between py-2 flex-md-row flex-column">
+            <div class="mb-2 mb-md-0">
+              ©
+              <script>
+                document.write(new Date().getFullYear());
+              </script>
+              , made with ❤️ by Mavle (IT-05)
             </div>
-          </footer>
+            <div class="d-none d-lg-inline-block">The Good Shepherd Parish Web-Based Management Information System
+            </div>
+          </div>
+        </footer>
         <!-- / Footer -->
 
         <div class="content-backdrop fade"></div>

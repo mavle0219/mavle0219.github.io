@@ -28,7 +28,7 @@ if (isset($_POST['search'])) {
         <tbody>
           <?php
           $keyword = $_POST['keyword'];
-          $query = $conn->prepare("SELECT * FROM `scholar` WHERE `sch_name` LIKE '%$keyword%' or `sch_age` LIKE '%$keyword%' or `sch_address` LIKE '%$keyword%'");
+          $query = $conn->prepare("SELECT * FROM `scholar` WHERE `sch_name` LIKE '%$keyword%' or `sch_age` LIKE '%$keyword%' or `sch_address` LIKE '%$keyword%' and sch_arch = 0");
           $query->execute();
           while ($row = $query->fetch()) {
           ?>
@@ -38,7 +38,7 @@ if (isset($_POST['search'])) {
               <td><?php echo $row['sch_age']; ?></td>
               <td><?php echo $row['sch_address']; ?></td>
               <td><a href="aschoprof.php?sch_id=<?= $row['sch_id'] ?>"><span class="badge bg-label-info">View</span></a>
-                <a href="#" onclick="confirmDelete(<?= $row['sch_id'] ?>)"><span class="badge bg-label-danger">Delete</span></a>
+                <a href="#" onclick="confirmArchive(<?= $row['sch_id'] ?>)"><span class="badge bg-label-danger">Archive</span></a>
               </td>
             </tr>
           <?php
@@ -67,7 +67,7 @@ if (isset($_POST['search'])) {
 
           <?php
 
-          $sql = "SELECT * FROM `scholar`";
+          $sql = "SELECT * FROM `scholar` where sch_arch = 0";
           $result = $conn->prepare($sql);
           $result->execute();
           while ($row = $result->fetch()) {
@@ -78,7 +78,7 @@ if (isset($_POST['search'])) {
               <td><?php echo $row['sch_age']; ?></td>
               <td><?php echo $row['sch_address']; ?></td>
               <td><a href="aschoprof.php?sch_id=<?= $row['sch_id'] ?>"><span class="badge bg-label-info">View</span></a>
-                <a href="#" onclick="confirmDelete(<?= $row['sch_id'] ?>)"><span class="badge bg-label-danger">Delete</span></a>
+                <a href="#" onclick="confirmArchive(<?= $row['sch_id'] ?>)"><span class="badge bg-label-danger">Archive</span></a>
               </td>
             </tr>
           <?php
@@ -95,13 +95,13 @@ if (isset($_POST['search'])) {
 ?>
 
 <script>
-  function confirmDelete(schId) {
+  function confirmArchive(schId) {
     Swal.fire({
       title: 'Are you sure?',
-      text: "You won't be able to revert this!",
+      text: "This will archive the scholar!",
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonText: 'Yes, delete it!',
+      confirmButtonText: 'Yes, archive it!',
       customClass: {
         confirmButton: 'btn btn-primary me-3',
         cancelButton: 'btn btn-label-secondary'
@@ -109,9 +109,8 @@ if (isset($_POST['search'])) {
       buttonsStyling: false
     }).then(function(result) {
       if (result.value) {
-        window.location.href = "adelsch.php?sch_id=" + schId;
-        console.log('Item with ID ' + schId + ' deleted.');
-
+        // Handle deletion directly on the same page
+        archiveScholar(schId);
       } else if (result.dismiss === Swal.DismissReason.cancel) {
         // User canceled, show cancellation message
         Swal.fire({
@@ -123,5 +122,12 @@ if (isset($_POST['search'])) {
         });
       }
     });
+  }
+
+  // Function to handle deletion
+  function archiveScholar(schId) {
+    // You can use AJAX to send a request to the server for deletion
+    // Alternatively, you can redirect to the deletion script on the server
+    window.location.href = "ascholist.php?sch_id=" + schId;
   }
 </script>

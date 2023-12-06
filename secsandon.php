@@ -135,12 +135,6 @@ if (!isset($user)) {
             </ul>
           </li>
           <li class="menu-header small text-uppercase"><span class="menu-header-text">Program Management</span></li>
-          <li class="menu-item">
-            <a href="cal.php" class="menu-link">
-              <i class="menu-icon tf-icons bx bx bxs-calendar"></i>
-              <div class="text-truncate" data-i18n="Calendar">Calendar</div>
-            </a>
-          </li>
           <li class="menu-item active open">
             <a href="javascript:void(0);" class="menu-link menu-toggle">
               <i class="menu-icon tf-icons bx bxs-donate-heart"></i>
@@ -167,11 +161,6 @@ if (!isset($user)) {
                   <li class="menu-item">
                     <a href="medmissre.php" class="menu-link">
                       <div class="text-truncate" data-i18n="Medical Mission">Medical Mission</div>
-                    </a>
-                  </li>
-                  <li class="menu-item">
-                    <a href="medassre.php" class="menu-link">
-                      <div class="text-truncate" data-i18n="Medical Assistance">Medical Assistance</div>
                     </a>
                   </li>
                 </ul>

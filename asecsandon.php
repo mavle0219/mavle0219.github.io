@@ -5,15 +5,40 @@ session_start();
 
 $admin = $_SESSION['admin'];
 
-if (!isset($admin)) {
-    header('location:login.php');
-}
-
 $select_profile = $conn->prepare("SELECT * FROM `users` WHERE id = ?");
 $select_profile->execute([$admin]);
 $fetch_profile = $select_profile->fetch(PDO::FETCH_ASSOC);
 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["submit"])) {
+if (!isset($admin)) {
+    header('location:login.php');
+}
+
+// Handle Deletion
+if (isset($_GET['don_id'])) {
+    $result = $conn->prepare('SELECT * FROM `donor` WHERE don_id = ?');
+    $result->execute([$_GET['don_id']]);
+    $user = $result->fetch(PDO::FETCH_ASSOC);
+
+    $result = $conn->prepare('DELETE FROM `donor` WHERE don_id  = ?');
+    $result->execute([$_GET['don_id']]);
+
+    $auditlogin = $conn->prepare("INSERT INTO `audit`(role, username, action) VALUES(?,?,?)");
+    $auditlogin->execute(["admin", $fetch_profile['username'], "delete secret santa donor"]);
+
+    echo "<script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+    Swal.fire({
+        icon: 'success',
+        title: 'Success',
+        text: 'Secret Santa Donor Deleted!',
+        showConfirmButton: false,
+        timer: 1000
+    }).then(function () {
+        window.location.href = 'asecsandon.php';
+    });
+  });
+  </script>";
+} else if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["submit"])) {
     // Retrieve form data
     $don_type = $_POST["don_type"];
     $don_name = $_POST["don_name"];
@@ -29,7 +54,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["submit"])) {
 
     $insertDonhisQuery = $conn->prepare("INSERT INTO donhis (dh_type, dh_name, dh_year, dh_amount) VALUES (?, ?, ?, ?)");
     $insertDonhisQuery->execute([$don_type, $don_name, $don_year, $don_amount]);
-
 
     $auditlogin = $conn->prepare("INSERT INTO `audit`(role, username, action) VALUES(?,?,?)");
     $auditlogin->execute(["admin", $fetch_profile['username'], "add secret santa donor"]);
@@ -53,6 +77,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["submit"])) {
     }
 }
 ?>
+<!-- Add your HTML code here for the form and other content -->
+
 
 <!DOCTYPE html>
 
@@ -178,12 +204,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["submit"])) {
                         </ul>
                     </li>
                     <li class="menu-header small text-uppercase"><span class="menu-header-text">Program Management</span></li>
-                    <li class="menu-item">
-                        <a href="acal.php" class="menu-link">
-                            <i class="menu-icon tf-icons bx bx bxs-calendar"></i>
-                            <div class="text-truncate" data-i18n="Calendar">Calendar</div>
-                        </a>
-                    </li>
                     <li class="menu-item active open">
                         <a href="javascript:void(0);" class="menu-link menu-toggle">
                             <i class="menu-icon tf-icons bx bxs-donate-heart"></i>
@@ -197,7 +217,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["submit"])) {
                                 <ul class="menu-sub">
                                     <li class="menu-item">
                                         <a href="aschore.php" class="menu-link">
-                                        <div class="text-truncate" data-i18n="Scholarship Claim">Scholarship Claim</div>
+                                            <div class="text-truncate" data-i18n="Scholarship Claim">Scholarship Claim</div>
                                         </a>
                                     </li>
                                 </ul>
@@ -210,11 +230,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["submit"])) {
                                     <li class="menu-item">
                                         <a href="amedmissre.php" class="menu-link">
                                             <div class="text-truncate" data-i18n="Medical Mission">Medical Mission</div>
-                                        </a>
-                                    </li>
-                                    <li class="menu-item">
-                                        <a href="amedassre.php" class="menu-link">
-                                            <div class="text-truncate" data-i18n="Medical Assistance">Medical Assistance</div>
                                         </a>
                                     </li>
                                 </ul>

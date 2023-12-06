@@ -93,7 +93,7 @@ $keyword = $_POST['keyword'];
 }
 ?>  
     
-<script>
+    <script>
   function confirmDelete(userId) {
     Swal.fire({
       title: 'Are you sure?',
@@ -108,9 +108,8 @@ $keyword = $_POST['keyword'];
       buttonsStyling: false
     }).then(function(result) {
       if (result.value) {
-        window.location.href = "adeluser.php?id=" + userId;
-        console.log('Item with ID ' + userId + ' deleted.');
-
+        // Redirect to auserlist.php with the user ID
+        window.location.href = "auserlist.php?id=" + userId;
       } else if (result.dismiss === Swal.DismissReason.cancel) {
         // User canceled, show cancellation message
         Swal.fire({

@@ -112,9 +112,8 @@ if (isset($_POST['search'])) {
       buttonsStyling: false
     }).then(function(result) {
       if (result.value) {
-        window.location.href = "adelsecsandon.php?ss_id=" + ssId;
+        window.location.href = "asecsanre.php?ss_id=" + ssId;
         console.log('Item with ID ' + ssId + ' deleted.');
-
       } else if (result.dismiss === Swal.DismissReason.cancel) {
         // User canceled, show cancellation message
         Swal.fire({

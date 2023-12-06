@@ -106,11 +106,6 @@ if (!isset($admin)) {
                       <div class="text-truncate" data-i18n="Beneficiaries List">Beneficiaries List</div>
                     </a>
                   </li>
-                  <li class="menu-item">
-                    <a href="" class="menu-link">
-                      <div class="text-truncate" data-i18n="Beneficiaries Profiles">Beneficiaries Profiles</div>
-                    </a>
-                  </li>
                 </ul>
               </li>
               <li class="menu-item">
@@ -121,11 +116,6 @@ if (!isset($admin)) {
                   <li class="menu-item">
                     <a href="ascholist.php" class="menu-link">
                       <div class="text-truncate" data-i18n="Scholars List">Scholars List</div>
-                    </a>
-                  </li>
-                  <li class="menu-item">
-                    <a href="" class="menu-link">
-                      <div class="text-truncate" data-i18n="Scholars Profiles">Scholars Profiles</div>
                     </a>
                   </li>
                 </ul>
@@ -159,34 +149,12 @@ if (!isset($admin)) {
             <ul class="menu-sub">
               <li class="menu-item">
                 <a href="javascript:void(0);" class="menu-link menu-toggle">
-                  <div class="text-truncate" data-i18n="Financial Aid">Financial Aid</div>
-                </a>
-                <ul class="menu-sub">
-                  <li class="menu-item">
-                    <a href="afinaidre.php" class="menu-link">
-                      <div class="text-truncate" data-i18n="Recipients">Recipients</div>
-                    </a>
-                  </li>
-                  <li class="menu-item">
-                    <a href="afinaiddocs.php" class="menu-link">
-                      <div class="text-truncate" data-i18n="Documentations">Documentations</div>
-                    </a>
-                  </li>
-                </ul>
-              </li>
-              <li class="menu-item">
-                <a href="javascript:void(0);" class="menu-link menu-toggle">
                   <div class="text-truncate" data-i18n="Scholars">Scholars</div>
                 </a>
                 <ul class="menu-sub">
                   <li class="menu-item">
                     <a href="aschore.php" class="menu-link">
-                      <div class="text-truncate" data-i18n="Scholars">Recipients</div>
-                    </a>
-                  </li>
-                  <li class="menu-item">
-                    <a href="aschodocs.php" class="menu-link">
-                      <div class="text-truncate" data-i18n="Documentations">Documentations</div>
+                      <div class="text-truncate" data-i18n="Scholarship Claim">Scholarship Claim</div>
                     </a>
                   </li>
                 </ul>
@@ -199,21 +167,6 @@ if (!isset($admin)) {
                   <li class="menu-item">
                     <a href="amedmissre.php" class="menu-link">
                       <div class="text-truncate" data-i18n="Medical Mission">Medical Mission</div>
-                    </a>
-                  </li>
-                  <li class="menu-item">
-                    <a href="amedmissdocs.php" class="menu-link">
-                      <div class="text-truncate" data-i18n="MM Documentations">MM Documentations</div>
-                    </a>
-                  </li>
-                  <li class="menu-item">
-                    <a href="amedassre.php" class="menu-link">
-                      <div class="text-truncate" data-i18n="Medical Assistance">Medical Assistance</div>
-                    </a>
-                  </li>
-                  <li class="menu-item">
-                    <a href="amedassdocs.php" class="menu-link">
-                      <div class="text-truncate" data-i18n="MA Documentations">MA Documentations</div>
                     </a>
                   </li>
                 </ul>
@@ -231,11 +184,6 @@ if (!isset($admin)) {
                   <li class="menu-item">
                     <a href="asecsanre.php" class="menu-link">
                       <div class="text-truncate" data-i18n="Events">Events</div>
-                    </a>
-                  </li>
-                  <li class="menu-item">
-                    <a href="asecsandocs.php" class="menu-link">
-                      <div class="text-truncate" data-i18n="Documentations">Documentations</div>
                     </a>
                   </li>
                 </ul>

@@ -5,13 +5,13 @@ session_start();
 
 $admin = $_SESSION['admin'];
 
-if (!isset($admin)) {
-  header('location:login.php');
-}
-
 $select_profile = $conn->prepare("SELECT * FROM `users` WHERE id = ?");
 $select_profile->execute([$admin]);
 $fetch_profile = $select_profile->fetch(PDO::FETCH_ASSOC);
+
+if (!isset($admin)) {
+  header('location:login.php');
+}
 
 // Function to calculate age from date of birth
 function calculateAge($dob)
@@ -22,6 +22,49 @@ function calculateAge($dob)
   return $age;
 }
 
+// Check if the archiving form was submitted
+if ($_SERVER["REQUEST_METHOD"] === "GET" && isset($_GET["ben_id"])) {
+  $benId = $_GET["ben_id"];
+
+  try {
+      // Check if the beneficiary exists
+      $stmt = $conn->prepare("SELECT * FROM `beneficiary` WHERE ben_id = ?");
+      $stmt->execute([$benId]);
+      $beneficiary = $stmt->fetch(PDO::FETCH_ASSOC);
+
+      if ($beneficiary) {
+          // Update the ben_arch column to 1 and set ben_ad to the current timestamp
+          $stmtUpdate = $conn->prepare("UPDATE `beneficiary` SET ben_arch = 1, ben_ad = NOW() WHERE ben_id = ?");
+          $stmtUpdate->execute([$benId]);
+
+          // Audit log
+          $auditlogin = $conn->prepare("INSERT INTO `audit`(role, username, action) VALUES(?,?,?)");
+          $auditlogin->execute(["admin", $fetch_profile['username'], "archive beneficiary"]);
+
+          echo "<script>
+              document.addEventListener('DOMContentLoaded', (event) => {
+              Swal.fire({
+                  icon: 'success',
+                  title: 'Success',
+                  text: 'Beneficiary Archived!',
+                  showConfirmButton: false,
+                  timer: 1000
+              }).then(function () {
+                  window.location.href = 'abenlist.php';
+              });
+              });
+          </script>";
+      } else {
+          echo "No record found with ben_id = $benId.";
+      }
+  } catch (PDOException $e) {
+      echo "Error: " . $e->getMessage();
+  }
+}
+
+
+
+// Process the form data for adding a new beneficiary
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["submit"])) {
   // Retrieve form data
   $ben_type = $_POST["ben_type"];
@@ -63,6 +106,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["submit"])) {
   }
 }
 ?>
+
 
 <!DOCTYPE html>
 
@@ -159,6 +203,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["submit"])) {
                       <div class="text-truncate" data-i18n="Beneficiaries List">Beneficiaries List</div>
                     </a>
                   </li>
+                  <li class="menu-item">
+                    <a href="archben.php" class="menu-link">
+                      <div class="text-truncate" data-i18n="Beneficiaries Archives">Beneficiaries Archives</div>
+                    </a>
+                  </li>
                 </ul>
               </li>
               <li class="menu-item">
@@ -189,12 +238,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["submit"])) {
           </li>
           <li class="menu-header small text-uppercase"><span class="menu-header-text">Program Management</span></li>
           <li class="menu-item">
-            <a href="acal.php" class="menu-link">
-              <i class="menu-icon tf-icons bx bx bxs-calendar"></i>
-              <div class="text-truncate" data-i18n="Calendar">Calendar</div>
-            </a>
-          </li>
-          <li class="menu-item">
             <a href="javascript:void(0);" class="menu-link menu-toggle">
               <i class="menu-icon tf-icons bx bxs-donate-heart"></i>
               <div class="text-truncate" data-i18n="Programs">Programs</div>
@@ -220,11 +263,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["submit"])) {
                   <li class="menu-item">
                     <a href="amedmissre.php" class="menu-link">
                       <div class="text-truncate" data-i18n="Medical Mission">Medical Mission</div>
-                    </a>
-                  </li>
-                  <li class="menu-item">
-                    <a href="amedassre.php" class="menu-link">
-                      <div class="text-truncate" data-i18n="Medical Assistance">Medical Assistance</div>
                     </a>
                   </li>
                 </ul>
@@ -383,7 +421,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["submit"])) {
                   <div class="card-body">
                     <div class="d-flex align-items-start justify-content-between">
                       <div class="content-left">
-                        <span>Beneficiaries</span>
+                        <span>Total Beneficiaries</span>
                         <div class="d-flex align-items-end mt-2">
                           <h4 class="mb-0 me-2"><?php $numbef = $conn->query("SELECT COUNT(*) FROM `beneficiary`")->fetchColumn();
                                                 echo $numbef; ?></h4>
@@ -434,6 +472,21 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["submit"])) {
                                                                 echo "Connection failed: " . $e->getMessage();
                                                               }
                                                               ?></small>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-sm-6 col-xl-3">
+                <div class="card card-border-shadow-info h-100">
+                  <div class="card-body">
+                    <div class="d-flex align-items-start justify-content-between">
+                      <div class="content-left">
+                        <span>Active Beneficiaries</span>
+                        <div class="d-flex align-items-end mt-2">
+                          <h4 class="mb-0 me-2"><?php $numbef = $conn->query('SELECT count(ben_age) FROM beneficiary where ben_arch = 0')->fetchColumn();
+                                                echo $numbef; ?></h4>
                         </div>
                       </div>
                     </div>

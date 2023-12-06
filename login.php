@@ -68,6 +68,7 @@ if (isset($_POST['username']) && isset($_POST['password'])) {
 }
 ?>
 
+
 <!DOCTYPE html>
 
 <html lang="en" class="dark-style layout-wide customizer-hide" dir="ltr" data-theme="theme-default" data-assets-path="../assets/" data-template="vertical-menu-template">
@@ -76,7 +77,7 @@ if (isset($_POST['username']) && isset($_POST['password'])) {
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
 
-  <title>Good Shepherd Parish Management System</title>
+  <title>Good Shepherd Parish Outreach Program Information Management System</title>
 
   <meta name="description" content="" />
 
@@ -135,20 +136,20 @@ if (isset($_POST['username']) && isset($_POST['password'])) {
 
       <!-- Login -->
       <div class="d-flex col-12 col-lg-5 col-xl-4 align-items-center authentication-bg p-sm-5 p-4">
-        <div class="w-px-400 mx-auto">
-        <div class="card-body pb-0 px-0 px-md-4">
-                        <img src="../assets/img/illustrations/gsplogo.png" height="350" alt="View Badge User" data-app-dark-img="illustrations/gsplogo.png" data-app-light-img="illustrations/gsplogo.png" />
-                      </div>
-                      <br></br>
+        <div class="w-px-410 mx-auto">
+          <div class="card-body pb-0 px-0 px-md-4">
+            <img src="../assets/img/illustrations/gsplogo.png" height="350" alt="View Badge User" data-app-dark-img="illustrations/gsplogo.png" data-app-light-img="illustrations/gsplogo.png" />
+          </div>
+          <br></br>
           <!-- Logo -->
           <div class="app-brand mb-5">
             <a href="login.php" class="app-brand-link gap-2">
-            <span class="app-brand-text demo text-body fw-bold" style="text-transform: uppercase">Good Shepherd Parish</span>
+              <span class="app-brand-text demo text-body fw-bold" style="text-transform: uppercase">The Good Shepherd Parish</span>
             </a>
           </div>
           <!-- /Logo -->
-          <h4 class="mb-2">Management Information System</h4>
-          <p class="mb-4"></p>
+          <h4 class="mb-2">Information Management System</h4>
+          <p class="mb-4">for Outreach Programs</p>
 
           <form id="formAuthentication" class="mb-3" action="" method="POST">
             <div class="mb-3">

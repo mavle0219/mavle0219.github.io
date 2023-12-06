@@ -107,6 +107,11 @@ if (!isset($admin)) {
                       <div class="text-truncate" data-i18n="Beneficiaries List">Beneficiaries List</div>
                     </a>
                   </li>
+                  <li class="menu-item">
+                    <a href="archben.php" class="menu-link">
+                      <div class="text-truncate" data-i18n="Beneficiaries Archives">Beneficiaries Archives</div>
+                    </a>
+                  </li>
                 </ul>
               </li>
               <li class="menu-item">
@@ -117,6 +122,11 @@ if (!isset($admin)) {
                   <li class="menu-item">
                     <a href="ascholist.php" class="menu-link">
                       <div class="text-truncate" data-i18n="Scholars List">Scholars List</div>
+                    </a>
+                  </li>
+                  <li class="menu-item active">
+                    <a href="archscho.php" class="menu-link">
+                      <div class="text-truncate" data-i18n="Scholars Archives">Scholars Archives</div>
                     </a>
                   </li>
                 </ul>
@@ -136,12 +146,6 @@ if (!isset($admin)) {
             </ul>
           </li>
           <li class="menu-header small text-uppercase"><span class="menu-header-text">Program Management</span></li>
-          <li class="menu-item">
-            <a href="acal.php" class="menu-link">
-              <i class="menu-icon tf-icons bx bx bxs-calendar"></i>
-              <div class="text-truncate" data-i18n="Calendar">Calendar</div>
-            </a>
-          </li>
           <li class="menu-item">
             <a href="javascript:void(0);" class="menu-link menu-toggle">
               <i class="menu-icon tf-icons bx bxs-donate-heart"></i>
@@ -168,11 +172,6 @@ if (!isset($admin)) {
                   <li class="menu-item">
                     <a href="amedmissre.php" class="menu-link">
                       <div class="text-truncate" data-i18n="Medical Mission">Medical Mission</div>
-                    </a>
-                  </li>
-                  <li class="menu-item">
-                    <a href="amedassre.php" class="menu-link">
-                      <div class="text-truncate" data-i18n="Medical Assistance">Medical Assistance</div>
                     </a>
                   </li>
                 </ul>
@@ -332,7 +331,7 @@ if (!isset($admin)) {
                       </div>
                     </div>
                     <div class="col-sm-5 text-center text-sm-left">
-                      <div class="card-body pb-0 px-0 px-md-4">
+                      <div class="card-body pb-0 px-0 px-md-4 d-flex align-items-center">
                         <img src="../assets/img/illustrations/gsplogo.png" height="250" data-app-dark-img="illustrations/gsplogo.png" data-app-light-img="illustrations/gsplogo.png" />
                       </div>
                     </div>
@@ -344,8 +343,8 @@ if (!isset($admin)) {
                   <div class="col-lg-6 col-md-12 col-6 mb-4">
                     <div class="card card-border-shadow-primary h-100">
                       <div class="card-body">
-                        <span class="d-block fw-medium mb-1">Number of <a href="abenlist.php"><span>Beneficiaries</span></a>:</span>
-                        <h3 class="card-title mb-1"><?php $numbef = $conn->query('SELECT COUNT(*) from `beneficiary`')->fetchColumn();
+                        <span class="d-block fw-medium mb-1">Number of <a href="abenlist.php"><span> Active Beneficiaries</span></a>:</span>
+                        <h3 class="card-title mb-1"><?php $numbef = $conn->query('SELECT COUNT(*) from `beneficiary` where ben_arch = 0')->fetchColumn();
                                                     echo $numbef ?></h3>
                         <small class="text-success fw-medium">
                           <?php
@@ -370,7 +369,13 @@ if (!isset($admin)) {
                             if ($result) {
                               $rowsAddedLastYear = $result['rows_added_last_year'];
 
-                              echo "+ $rowsAddedLastYear from $previousYear's total";
+                              // Check if it increased or decreased
+                              $changeSymbol = ($rowsAddedLastYear > 0) ? '+' : '-';
+
+                              // Check if it increased and display in green, otherwise display in red
+                              $changeColor = ($rowsAddedLastYear > 0) ? 'neongreen' : 'neonred';
+
+                              echo "<span style='color: $changeColor;'>$changeSymbol $rowsAddedLastYear from $previousYear's total</span>";
                             } else {
                               echo "No results found";
                             }
@@ -378,6 +383,7 @@ if (!isset($admin)) {
                             echo "Connection failed: " . $e->getMessage();
                           }
                           ?>
+
 
                         </small>
                       </div>
@@ -387,8 +393,48 @@ if (!isset($admin)) {
                     <div class="card card-border-shadow-success h-100">
                       <div class="card-body">
                         <span class="d-block fw-medium mb-1">Number of <a href="ascholist.php"><span> Active Scholars</span></a>:</span>
-                        <h3 class="card-title mb-1"><?php $numbef = $conn->query('SELECT COUNT(*) from `scholar`')->fetchColumn();
+                        <h3 class="card-title mb-1"><?php $numbef = $conn->query('SELECT COUNT(*) from `scholar` where sch_arch = 0')->fetchColumn();
                                                     echo $numbef; ?></h3>
+                        <small class="text-success fw-medium">
+                          <?php
+                          try {
+                            // Set PDO to throw exceptions on error
+                            $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                            // Get the current year
+                            $currentYear = date('Y');
+
+                            // Calculate the year for the previous year
+                            $previousYear = $currentYear - 1;
+
+                            // SQL query to get the count of rows added within the past year
+                            $sql = "SELECT COUNT(*) AS rows_added_last_year FROM scholar WHERE sch_regdate >= DATE_SUB(NOW(), INTERVAL 1 YEAR)";
+
+                            // Prepare and execute the query
+                            $stmt = $conn->query($sql);
+
+                            // Fetch the result
+                            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                            if ($result) {
+                              $rowsAddedLastYear = $result['rows_added_last_year'];
+
+                              // Check if it increased or decreased
+                              $changeSymbol = ($rowsAddedLastYear > 0) ? '+' : '-';
+
+                              // Check if it increased and display in green, otherwise display in red
+                              $changeColor = ($rowsAddedLastYear > 0) ? 'neongreen' : 'neonred';
+
+                              echo "<span style='color: $changeColor;'>$changeSymbol $rowsAddedLastYear from $previousYear's total</span>";
+                            } else {
+                              echo "No results found";
+                            }
+                          } catch (PDOException $e) {
+                            echo "Connection failed: " . $e->getMessage();
+                          }
+                          ?>
+
+
+                        </small>
                       </div>
                     </div>
                   </div>
@@ -396,8 +442,48 @@ if (!isset($admin)) {
                     <div class="card card-border-shadow-warning h-100">
                       <div class="card-body">
                         <span class="d-block fw-medium mb-1">Medical Assistance <a href="amedass.php"><span>Recipients</span></a>:</span>
-                        <h3 class="card-title mb-1"><?php $numbef = $conn->query("SELECT COUNT(*) FROM `beneficiary` WHERE ben_ma = 'Yes'")->fetchColumn();
+                        <h3 class="card-title mb-1"><?php $numbef = $conn->query("SELECT COUNT(*) FROM `beneficiary` WHERE ben_ma = 'Yes' and ben_arch = 0")->fetchColumn();
                                                     echo $numbef; ?></h3>
+                        <small class="text-success fw-medium">
+                          <?php
+                          try {
+                            // Set PDO to throw exceptions on error
+                            $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                            // Get the current year
+                            $currentYear = date('Y');
+
+                            // Calculate the year for the previous year
+                            $previousYear = $currentYear - 1;
+
+                            // SQL query to get the count of rows added within the past year
+                            $sql = "SELECT COUNT(*) AS rows_added_last_year FROM beneficiary WHERE ben_ma = 'Yes' and ben_regdate >= DATE_SUB(NOW(), INTERVAL 1 YEAR)";
+
+                            // Prepare and execute the query
+                            $stmt = $conn->query($sql);
+
+                            // Fetch the result
+                            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                            if ($result) {
+                              $rowsAddedLastYear = $result['rows_added_last_year'];
+
+                              // Check if it increased or decreased
+                              $changeSymbol = ($rowsAddedLastYear > 0) ? '+' : '-';
+
+                              // Check if it increased and display in green, otherwise display in red
+                              $changeColor = ($rowsAddedLastYear > 0) ? 'neongreen' : 'neonred';
+
+                              echo "<span style='color: $changeColor;'>$changeSymbol $rowsAddedLastYear from $previousYear's total</span>";
+                            } else {
+                              echo "No results found";
+                            }
+                          } catch (PDOException $e) {
+                            echo "Connection failed: " . $e->getMessage();
+                          }
+                          ?>
+
+
+                        </small>
                       </div>
                     </div>
                   </div>
@@ -405,8 +491,48 @@ if (!isset($admin)) {
                     <div class="card card-border-shadow-info h-100">
                       <div class="card-body">
                         <span class="d-block fw-medium mb-1">Secret Santa <a href="asecsandon.php"><span> Active Donors</span></a>:</span>
-                        <h3 class="card-title mb-1"><?php $numbef = $conn->query("SELECT COUNT(*) FROM `donor` WHERE don_avail = 'Yes' and don_year = YEAR(CURDATE())")->fetchColumn();
+                        <h3 class="card-title mb-1"><?php $numbef = $conn->query("SELECT COUNT(*) FROM `donor` WHERE don_arch = 0 and don_avail = 'Yes' and don_year = YEAR(CURDATE())")->fetchColumn();
                                                     echo $numbef; ?></h3>
+                        <small class="text-success fw-medium">
+                          <?php
+                          try {
+                            // Set PDO to throw exceptions on error
+                            $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                            // Get the current year
+                            $currentYear = date('Y');
+
+                            // Calculate the year for the previous year
+                            $previousYear = $currentYear - 1;
+
+                            // SQL query to get the count of rows added within the past year
+                            $sql = "SELECT COUNT(*) AS rows_added_last_year FROM donor WHERE don_regdate >= DATE_SUB(NOW(), INTERVAL 1 YEAR)";
+
+                            // Prepare and execute the query
+                            $stmt = $conn->query($sql);
+
+                            // Fetch the result
+                            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                            if ($result) {
+                              $rowsAddedLastYear = $result['rows_added_last_year'];
+
+                              // Check if it increased or decreased
+                              $changeSymbol = ($rowsAddedLastYear > 0) ? '+' : '-';
+
+                              // Check if it increased and display in green, otherwise display in red
+                              $changeColor = ($rowsAddedLastYear > 0) ? 'neongreen' : 'neonred';
+
+                              echo "<span style='color: $changeColor;'>$changeSymbol $rowsAddedLastYear from $previousYear's total</span>";
+                            } else {
+                              echo "No results found";
+                            }
+                          } catch (PDOException $e) {
+                            echo "Connection failed: " . $e->getMessage();
+                          }
+                          ?>
+
+
+                        </small>
                       </div>
                     </div>
                   </div>
@@ -420,47 +546,43 @@ if (!isset($admin)) {
                   </div>
                   <div class="card-body">
                     <!-- Activity Timeline -->
+                    <?php
+
+                    // Fetch events from the database
+                    $stmt = $conn->prepare("SELECT * FROM events ORDER BY date");
+                    $stmt->execute();
+                    $events = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                    ?>
+
                     <ul class="timeline">
-                      <li class="timeline-item timeline-item-transparent">
-                        <span class="timeline-point-wrapper"><span class="timeline-point timeline-point-primary"></span></span>
-                        <div class="timeline-event">
-                          <div class="timeline-header mb-1">
-                            <h6 class="mb-0">October 10, 2023</h6>
-                            <small class="text-muted"></small>
-                          </div>
-                          <p class="mb-2">Feast of The Marky</p>
-                          <div class="d-flex">
-                            <a href="javascript:void(0)" class="d-flex align-items-center me-3">
-                            </a>
-                          </div>
-                        </div>
-                      </li>
-                      <li class="timeline-item timeline-item-transparent">
-                        <span class="timeline-point-wrapper"><span class="timeline-point timeline-point-warning"></span></span>
-                        <div class="timeline-event">
-                          <div class="timeline-header mb-1">
-                            <h6 class="mb-0">November 1, 2023</h6>
-                            <small class="text-muted"></small>
-                          </div>
-                          <p class="mb-2">All Saints' Day</p>
-                          <div class="d-flex flex-wrap">
-                            <div class="avatar me-3">
+                      <?php
+                      $eventCounter = 0;
+                      foreach ($events as $event) :
+                        if ($eventCounter < 4) : // Limit to 3 events
+                      ?>
+                          <li class="timeline-item timeline-item-transparent">
+                            <span class="timeline-point-wrapper">
+                              <span class="timeline-point timeline-point-primary"></span>
+                            </span>
+                            <div class="timeline-event">
+                              <div class="timeline-header mb-1">
+                                <h6 class="mb-0"><?php echo date('F j, Y', strtotime($event['date'])); ?></h6>
+                                <small class="text-muted"></small>
+                              </div>
+                              <p class="mb-2"><?php echo htmlspecialchars($event['title']); ?></p>
+                              <!-- You can add more details as needed -->
                             </div>
-                          </div>
-                        </div>
-                      </li>
-                      <li class="timeline-item timeline-item-transparent">
-                        <span class="timeline-point-wrapper"><span class="timeline-point timeline-point-info"></span></span>
-                        <div class="timeline-event pb-0">
-                          <div class="timeline-header mb-1">
-                            <h6 class="mb-0">November 2, 2023</h6>
-                            <small class="text-muted"></small>
-                          </div>
-                          <p class="mb-2">All Souls' Day</p>
-                        </div>
-                      </li>
-                      <a href="acal.php" class="btn btn-primary">Go to Calendar</a>
+                          </li>
+                      <?php
+                          $eventCounter++;
+                        else :
+                          break; // Exit the loop after reaching the limit
+                        endif;
+                      endforeach;
+                      ?>
                     </ul>
+
+
                     <!-- /Activity Timeline -->
                   </div>
                 </div>

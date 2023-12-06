@@ -118,15 +118,14 @@ if (isset($_POST['search'])) {
       buttonsStyling: false
     }).then(function(result) {
       if (result.value) {
-        window.location.href = "adeldon.php?don_id=" + donId;
+        window.location.href = "asecsandon.php?don_id=" + donId;
         console.log('Item with ID ' + donId + ' deleted.');
-
       } else if (result.dismiss === Swal.DismissReason.cancel) {
         // User canceled, show cancellation message
         Swal.fire({
+          icon: 'error',
           title: 'Cancelled',
           text: 'No changes made!',
-          icon: 'error',
           showConfirmButton: false,
           timer: 1500
         });
@@ -134,3 +133,4 @@ if (isset($_POST['search'])) {
     });
   }
 </script>
+

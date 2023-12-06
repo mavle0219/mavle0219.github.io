@@ -181,6 +181,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["submit"])) {
                             <div class="text-truncate" data-i18n="Beneficiaries List">Beneficiaries List</div>
                           </a>
                         </li>
+                        <li class="menu-item">
+                          <a href="archben.php" class="menu-link">
+                            <div class="text-truncate" data-i18n="Beneficiaries Archives">Beneficiaries Archives</div>
+                          </a>
+                        </li>
                       </ul>
                     </li>
                     <li class="menu-item open">
@@ -193,6 +198,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["submit"])) {
                             <div class="text-truncate" data-i18n="Scholars List">Scholars List</div>
                           </a>
                         </li>
+                        <li class="menu-item active">
+                    <a href="aschoprof.php" class="menu-link">
+                      <div class="text-truncate" data-i18n="Scholars Profiles">Scholars Profiles</div>
+                    </a>
+                  </li>
+                        <li class="menu-item">
+                    <a href="archscho.php" class="menu-link">
+                      <div class="text-truncate" data-i18n="Scholars Archives">Scholars Archives</div>
+                    </a>
+                  </li>
                       </ul>
                     </li>
                     <li class="menu-item">
@@ -210,12 +225,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["submit"])) {
                   </ul>
                 </li>
                 <li class="menu-header small text-uppercase"><span class="menu-header-text">Program Management</span></li>
-                <li class="menu-item">
-                  <a href="acal.php" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx bxs-calendar"></i>
-                    <div class="text-truncate" data-i18n="Calendar">Calendar</div>
-                  </a>
-                </li>
                 <li class="menu-item">
                   <a href="javascript:void(0);" class="menu-link menu-toggle">
                     <i class="menu-icon tf-icons bx bxs-donate-heart"></i>
@@ -242,11 +251,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["submit"])) {
                         <li class="menu-item">
                           <a href="amedmissre.php" class="menu-link">
                             <div class="text-truncate" data-i18n="Medical Mission">Medical Mission</div>
-                          </a>
-                        </li>
-                        <li class="menu-item">
-                          <a href="amedassre.php" class="menu-link">
-                            <div class="text-truncate" data-i18n="Medical Assistance">Medical Assistance</div>
                           </a>
                         </li>
                       </ul>
@@ -463,41 +467,34 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["submit"])) {
                     </div>
 
                     <div class="col-xl-8 col-lg-7 col-md-7 order-0 order-md-1">
-                    <div class="card">
-                  <div class="card text-center">
-                    <div class="card-header">
-                      <ul class="nav nav-pills card-header-pills" role="tablist">
-                        <li class="nav-item">
-                          <button
-                            type="button"
-                            class="nav-link active"
-                            role="tab"
-                            data-bs-toggle="tab"
-                            data-bs-target="#navs-pills-within-card-active"
-                            aria-controls="navs-pills-within-card-active"
-                            aria-selected="true">
-                            Scholar History
-                          </button>
-                        </li>
-                      </ul>
-                    </div>
-                    <div class="card-body">
-                      <div class="tab-content p-0">
-                        <div class="tab-pane fade show active" id="navs-pills-within-card-active" role="tabpanel">
-                          <div class="card-datatable table-responsive" style="max-height: 585px; overflow-y: auto;">
-                            <table class="datatables-basic table border-top">
-                              <thead style="position: sticky; top: 0; background-color: #7e8a9b; z-index: 1;">
-                                <tr>
-                                  <th>School Year</th>
-                                  <th>Month</th>
-                                  <th>Claimed</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                <?php
-                                $scholar = $sch['sch_name'];
+                      <div class="card">
+                        <div class="card text-center">
+                          <div class="card-header">
+                            <ul class="nav nav-pills card-header-pills" role="tablist">
+                              <li class="nav-item">
+                                <button type="button" class="nav-link active" role="tab" data-bs-toggle="tab" data-bs-target="#navs-pills-within-card-active" aria-controls="navs-pills-within-card-active" aria-selected="true">
+                                  Scholar History
+                                </button>
+                              </li>
+                            </ul>
+                          </div>
+                          <div class="card-body">
+                            <div class="tab-content p-0">
+                              <div class="tab-pane fade show active" id="navs-pills-within-card-active" role="tabpanel">
+                                <div class="card-datatable table-responsive" style="max-height: 585px; overflow-y: auto;">
+                                  <table class="datatables-basic table border-top">
+                                    <thead style="position: sticky; top: 0; background-color: #7e8a9b; z-index: 1;">
+                                      <tr>
+                                        <th>School Year</th>
+                                        <th>Month</th>
+                                        <th>Claimed</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      <?php
+                                      $scholar = $sch['sch_name'];
 
-                                $sql = "SELECT * FROM claim WHERE c_name = '$scholar' ORDER BY c_sy DESC, 
+                                      $sql = "SELECT * FROM claim WHERE c_name = '$scholar' ORDER BY c_sy DESC, 
         CASE c_month 
             WHEN 'January' THEN 1 
             WHEN 'February' THEN 2 
@@ -513,29 +510,29 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["submit"])) {
             WHEN 'December' THEN 12 
         END DESC";
 
-                                $result = $conn->prepare($sql);
-                                $result->execute();
-                                while ($row = $result->fetch()) {
-                                ?>
-                                  <tr>
-                                    <td><?php echo $row['c_sy']; ?></td>
-                                    <td><?php echo $row['c_month']; ?></td>
-                                    <td style="color: <?php echo $row['c_claim'] == 'Yes' ? '#39FF14' : '#FF073A'; ?>">
-                                      <?php echo $row['c_claim']; ?>
-                                    </td>
+                                      $result = $conn->prepare($sql);
+                                      $result->execute();
+                                      while ($row = $result->fetch()) {
+                                      ?>
+                                        <tr>
+                                          <td><?php echo $row['c_sy']; ?></td>
+                                          <td><?php echo $row['c_month']; ?></td>
+                                          <td style="color: <?php echo $row['c_claim'] == 'Monthly Allowance' ? '#39FF14' : '#FF073A'; ?>">
+                                            <?php echo $row['c_claim']; ?>
+                                          </td>
 
-                                  </tr>
-                                <?php
-                                }
-                                ?>
-                              </tbody>
-                            </table>
+                                        </tr>
+                                      <?php
+                                      }
+                                      ?>
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
-              </div>
                     </div>
                     <!-- Modal -->
                     <!-- Edit User Modal -->

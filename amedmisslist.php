@@ -29,7 +29,7 @@ if (isset($_POST['search'])) {
                     <?php
                     $keyword = $_POST['keyword'];
                     $query = $conn->prepare("SELECT * FROM `medmiss` WHERE `mm_event` LIKE '%$keyword%' or `mm_eventname` LIKE '%$keyword%' or `mm_creator` LIKE '%$keyword%' or
-    `mm_date` LIKE '%$keyword%' or `mm_start` LIKE '%$keyword%' or `mm_end` LIKE '%$keyword%'");
+    `mm_date` LIKE '%$keyword%' or `mm_start` LIKE '%$keyword%' or `mm_end` LIKE '%$keyword%' order by mm_event asc");
                     $query->execute();
                     while ($row = $query->fetch()) {
                     ?>
@@ -73,7 +73,7 @@ if (isset($_POST['search'])) {
 
                     <?php
 
-                    $sql = "SELECT * FROM `medmiss`";
+                    $sql = "SELECT * FROM `medmiss` order by mm_event asc";
                     $result = $conn->prepare($sql);
                     $result->execute();
                     while ($row = $result->fetch()) {
@@ -118,9 +118,8 @@ if (isset($_POST['search'])) {
       buttonsStyling: false
     }).then(function(result) {
       if (result.value) {
-        window.location.href = "adelmedmiss.php?mm_id=" + mmId;
-        console.log('Item with ID ' + mmId + ' deleted.');
-
+        // Handle deletion directly on the same page
+        deleteMedicalMission(mmId);
       } else if (result.dismiss === Swal.DismissReason.cancel) {
         // User canceled, show cancellation message
         Swal.fire({
@@ -132,5 +131,12 @@ if (isset($_POST['search'])) {
         });
       }
     });
+  }
+
+  // Function to handle deletion
+  function deleteMedicalMission(mmId) {
+    // You can use AJAX to send a request to the server for deletion
+    // Alternatively, you can redirect to the deletion script on the server
+    window.location.href = "amedmissre.php?delete_mm_id=" + mmId;
   }
 </script>

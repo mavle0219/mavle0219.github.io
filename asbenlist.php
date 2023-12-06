@@ -27,8 +27,8 @@ if (isset($_POST['search'])) {
         <tbody>
           <?php
           $keyword = $_POST['keyword'];
-          $query = $conn->prepare("SELECT * FROM `beneficiary` WHERE `ben_name` LIKE '%$keyword%' or `ben_age` LIKE '%$keyword%' or
-    `ben_address` LIKE '%$keyword%' or `ben_regdate` LIKE '%$keyword%' order by `ben_id`");
+          $query = $conn->prepare("SELECT * FROM `beneficiary` WHERE (`ben_name` LIKE '%$keyword%' OR `ben_age` LIKE '%$keyword%' OR
+          `ben_address` LIKE '%$keyword%' OR `ben_regdate` LIKE '%$keyword%') AND `ben_arch` = 0 ORDER BY `ben_id`");      
           $query->execute();
           while ($row = $query->fetch()) {
           ?>
@@ -39,7 +39,7 @@ if (isset($_POST['search'])) {
               <td><?php echo $row['ben_address']; ?></td>
               <td><?php echo $row['ben_regdate']; ?></td>
               <td><a href="abenprof.php?ben_id=<?= $row['ben_id'] ?>"><span class="badge bg-label-info">View</span></a>
-                <a href="#" onclick="confirmDelete(<?= $row['ben_id'] ?>)"><span class="badge bg-label-danger">Delete</span></a>
+                <a href="#" onclick="confirmArchive(<?= $row['ben_id'] ?>)"><span class="badge bg-label-danger">Archive</span></a>
               </td>
             </tr>
           <?php
@@ -69,7 +69,7 @@ if (isset($_POST['search'])) {
 
           <?php
 
-          $sql = "SELECT * FROM `beneficiary`";
+          $sql = "SELECT * FROM `beneficiary` where ben_arch = 0";
           $result = $conn->prepare($sql);
           $result->execute();
           
@@ -82,7 +82,7 @@ if (isset($_POST['search'])) {
               <td><?php echo $row['ben_address']; ?></td>
               <td><?php echo $row['ben_regdate']; ?></td>
               <td><a href="abenprof.php?ben_id=<?= $row['ben_id'] ?>"><span class="badge bg-label-info">View</span></a>
-                <a href="#" onclick="confirmDelete(<?= $row['ben_id'] ?>)"><span class="badge bg-label-danger">Delete</span></a>
+                <a href="#" onclick="confirmArchive(<?= $row['ben_id'] ?>)"><span class="badge bg-label-danger">Archive</span></a>
               </td>
             </tr>
           <?php
@@ -99,13 +99,13 @@ if (isset($_POST['search'])) {
 ?>
 
 <script>
-  function confirmDelete(benId) {
+  function confirmArchive(benId) {
     Swal.fire({
       title: 'Are you sure?',
-      text: "You won't be able to revert this!",
+      text: "This will archive the beneficiary!",
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonText: 'Yes, delete it!',
+      confirmButtonText: 'Yes, archive it!',
       customClass: {
         confirmButton: 'btn btn-primary me-3',
         cancelButton: 'btn btn-label-secondary'
@@ -113,9 +113,8 @@ if (isset($_POST['search'])) {
       buttonsStyling: false
     }).then(function(result) {
       if (result.value) {
-        window.location.href = "adelben.php?ben_id=" + benId;
-        console.log('Item with ID ' + benId + ' deleted.');
-
+        // Handle archiving directly on the same page
+        archiveBeneficiary(benId);
       } else if (result.dismiss === Swal.DismissReason.cancel) {
         // User canceled, show cancellation message
         Swal.fire({
@@ -128,4 +127,12 @@ if (isset($_POST['search'])) {
       }
     });
   }
+
+  // Function to handle archiving
+  function archiveBeneficiary(benId) {
+    // You can use AJAX to send a request to the server for archiving
+    // Alternatively, you can redirect to the archiving script on the server
+    window.location.href = "abenlist.php?ben_id=" + benId;
+  }
 </script>
+

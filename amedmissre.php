@@ -14,7 +14,7 @@ $select_profile = $conn->prepare("SELECT * FROM `users` WHERE id = ?");
 $select_profile->execute([$admin]);
 $fetch_profile = $select_profile->fetch(PDO::FETCH_ASSOC);
 
-// Check if the form was submitted
+// Check if the form was submitted for adding an event
 if (isset($_POST['submit'])) {
     // Retrieve form data
     $mm_event = $_POST['mm_event'];
@@ -34,6 +34,16 @@ if (isset($_POST['submit'])) {
         $stmt->bindParam(':mm_eventname', $mm_eventname, PDO::PARAM_STR);
         $stmt->bindParam(':mm_creator', $mm_creator, PDO::PARAM_STR);
         $stmt->execute();
+
+        // Insert into events table
+        $sqlEvents = "INSERT INTO events (title, start, end, date)
+                      VALUES (:title, :start, :end, :date)";
+        $stmtEvents = $conn->prepare($sqlEvents);
+        $stmtEvents->bindParam(':title', $mm_eventname, PDO::PARAM_STR);
+        $stmtEvents->bindParam(':start', $mm_start, PDO::PARAM_STR);
+        $stmtEvents->bindParam(':end', $mm_end, PDO::PARAM_STR);
+        $stmtEvents->bindParam(':date', $mm_event, PDO::PARAM_STR);
+        $stmtEvents->execute();
 
         $auditlogin = $conn->prepare("INSERT INTO `audit`(role, username, action) VALUES(?,?,?)");
         $auditlogin->execute(["admin", $fetch_profile['username'], "add medical mission event"]);
@@ -56,8 +66,68 @@ if (isset($_POST['submit'])) {
     }
 }
 
-?>
+// Check if the deletion form was submitted
+if (isset($_GET['delete_mm_id'])) {
+    $mmId = $_GET['delete_mm_id'];
 
+    try {
+        // Retrieve the date associated with the mm_id from the medmiss table
+        $stmt = $conn->prepare("SELECT mm_event FROM medmiss WHERE mm_id = :mmId");
+        $stmt->bindParam(':mmId', $mmId);
+        $stmt->execute();
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($result) {
+            $dateToDelete = $result['mm_event'];
+
+            // Delete rows from both tables based on the date
+            $conn->beginTransaction();
+
+            // Delete from medmiss table
+            $stmtMedmiss = $conn->prepare("DELETE FROM medmiss WHERE mm_id = :mmId");
+            $stmtMedmiss->bindParam(':mmId', $mmId);
+            $stmtMedmiss->execute();
+
+            // Delete from medmissre table based on the date
+            $stmtMedmissre = $conn->prepare("DELETE FROM medmissre WHERE mm_event = :dateToDelete");
+            $stmtMedmissre->bindParam(':dateToDelete', $dateToDelete);
+            $stmtMedmissre->execute();
+
+            // Delete from events table based on the date
+            $stmtEvents = $conn->prepare("DELETE FROM events WHERE date = :dateToDelete");
+            $stmtEvents->bindParam(':dateToDelete', $dateToDelete);
+            $stmtEvents->execute();
+
+            $conn->commit();
+
+            // Audit log
+            $auditlogin = $conn->prepare("INSERT INTO `audit`(role, username, action) VALUES(?,?,?)");
+            $auditlogin->execute(["admin", $fetch_profile['username'], "delete medical mission event"]);
+
+            echo "<script>
+            document.addEventListener('DOMContentLoaded', (event) => {
+            Swal.fire({
+                icon: 'success',
+                title: 'Success',
+                text: 'Medical Mission Event Deleted!',
+                showConfirmButton: false,
+                timer: 1000
+            }).then(function () {
+                window.location.href = 'amedmissre.php';
+            });
+            });
+            </script>";
+
+        } else {
+            echo "No record found with mm_id = $mmId.";
+        }
+
+    } catch (PDOException $e) {
+        $conn->rollBack();
+        echo "Error: " . $e->getMessage();
+    }
+}
+?>
 
 <!DOCTYPE html>
 
@@ -189,12 +259,6 @@ if (isset($_POST['submit'])) {
                         </ul>
                     </li>
                     <li class="menu-header small text-uppercase"><span class="menu-header-text">Program Management</span></li>
-                    <li class="menu-item">
-                        <a href="acal.php" class="menu-link">
-                            <i class="menu-icon tf-icons bx bx bxs-calendar"></i>
-                            <div class="text-truncate" data-i18n="Calendar">Calendar</div>
-                        </a>
-                    </li>
                     <li class="menu-item active open">
                         <a href="javascript:void(0);" class="menu-link menu-toggle">
                             <i class="menu-icon tf-icons bx bxs-donate-heart"></i>
@@ -221,11 +285,6 @@ if (isset($_POST['submit'])) {
                                     <li class="menu-item active">
                                         <a href="amedmissre.php" class="menu-link">
                                             <div class="text-truncate" data-i18n="Medical Mission">Medical Mission</div>
-                                        </a>
-                                    </li>
-                                    <li class="menu-item">
-                                        <a href="amedassre.php" class="menu-link">
-                                            <div class="text-truncate" data-i18n="Medical Assistance">Medical Assistance</div>
                                         </a>
                                     </li>
                                 </ul>

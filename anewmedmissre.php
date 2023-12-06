@@ -156,12 +156,6 @@ if (!isset($admin)) {
                                     </ul>
                                 </li>
                                 <li class="menu-header small text-uppercase"><span class="menu-header-text">Program Management</span></li>
-                                <li class="menu-item">
-                                    <a href="acal.php" class="menu-link">
-                                        <i class="menu-icon tf-icons bx bx bxs-calendar"></i>
-                                        <div class="text-truncate" data-i18n="Calendar">Calendar</div>
-                                    </a>
-                                </li>
                                 <li class="menu-item active open">
                                     <a href="javascript:void(0);" class="menu-link menu-toggle">
                                         <i class="menu-icon tf-icons bx bxs-donate-heart"></i>
@@ -195,11 +189,7 @@ if (!isset($admin)) {
                                                         <div class="text-truncate" data-i18n="Add Recipients">Add Recipients</div>
                                                     </a>
                                                 </li>
-                                                <li class="menu-item">
-                                                    <a href="amedassre.php" class="menu-link">
-                                                        <div class="text-truncate" data-i18n="Medical Assistance">Medical Assistance</div>
-                                                    </a>
-                                                </li>
+    
                                             </ul>
                                         </li>
                                         <li class="menu-item">

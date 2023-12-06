@@ -1,19 +1,53 @@
 <?php
-include 'connect.php'; // Include the script that connects to the database
+include 'connect.php';
 
 session_start();
 
 $admin = $_SESSION['admin'];
 
 if (!isset($admin)) {
-  header('location:login.php');
+    header('location:login.php');
 }
 
 $select_profile = $conn->prepare("SELECT * FROM `users` WHERE id = ?");
 $select_profile->execute([$admin]);
 $fetch_profile = $select_profile->fetch(PDO::FETCH_ASSOC);
 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["submit"])) {
+// Handle Deletion
+if (isset($_GET['ss_id'])) {
+    // Fetch the details of the Secret Santa record
+    $result = $conn->prepare('SELECT * FROM `secsan` WHERE ss_id = ?');
+    $result->execute([$_GET['ss_id']]);
+    $secretSanta = $result->fetch(PDO::FETCH_ASSOC);
+
+    // Delete the Secret Santa record from the 'secsan' table
+    $result = $conn->prepare('DELETE FROM `secsan` WHERE ss_id = ?');
+    $result->execute([$_GET['ss_id']]);
+
+    // Delete rows with the same date from 'secsanre' table
+    $resultDeleteSecsanre = $conn->prepare('DELETE FROM `secsanre` WHERE ss_event = ?');
+    $resultDeleteSecsanre->execute([$secretSanta['ss_event']]);
+
+    $resultDeleteEvents = $conn->prepare('DELETE FROM `events` WHERE title = ?');
+    $resultDeleteEvents->execute([$secretSanta['ss_eventname']]);
+
+    $auditlogin = $conn->prepare("INSERT INTO `audit`(role, username, action) VALUES(?,?,?)");
+    $auditlogin->execute(["admin", $fetch_profile['username'], "delete secret santa record"]);
+
+    echo "<script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+        Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: 'Secret Santa Record Deleted!',
+            showConfirmButton: false,
+            timer: 1000
+        }).then(function () {
+            window.location.href = 'asecsanre.php';
+        });
+    });
+  </script>";
+} else if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["submit"])) {
     // Retrieve form data
     $ss_event = $_POST["ss_event"];
     $ss_eventname = $_POST["ss_eventname"];
@@ -31,6 +65,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["submit"])) {
         $sql = "INSERT INTO secsan (ss_event, ss_eventname, ss_creator, ss_date, ss_year, ssevent) VALUES (?, ?, ?, ?, ?, ?)";
         $stmt = $conn->prepare($sql);
         $stmt->execute([$ss_event, $ss_eventname, $ss_creator, $ss_date, $ss_year, 'Yes']);
+
+        // Insert data into the 'events' table
+        $eventTitle = $ss_eventname;
+        $eventStart = "ALL";
+        $eventEnd = "DAY"; // Assuming end time is end of the day
+
+        $eventSql = "INSERT INTO events (title, start, end, date) VALUES (?, ?, ?, ?)";
+        $eventStmt = $conn->prepare($eventSql);
+        $eventStmt->execute([$eventTitle, $eventStart, $eventEnd, $ss_event]);
 
         $auditlogin = $conn->prepare("INSERT INTO `audit`(role, username, action) VALUES(?,?,?)");
         $auditlogin->execute(["admin", $fetch_profile['username'], "add secret santa event"]);
@@ -53,9 +96,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["submit"])) {
         header('location: asecsanre.php');
     }
 }
-
-
 ?>
+
+
 
 <!DOCTYPE html>
 
@@ -187,12 +230,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["submit"])) {
                         </ul>
                     </li>
                     <li class="menu-header small text-uppercase"><span class="menu-header-text">Program Management</span></li>
-                    <li class="menu-item">
-                        <a href="acal.php" class="menu-link">
-                            <i class="menu-icon tf-icons bx bx bxs-calendar"></i>
-                            <div class="text-truncate" data-i18n="Calendar">Calendar</div>
-                        </a>
-                    </li>
                     <li class="menu-item active open">
                         <a href="javascript:void(0);" class="menu-link menu-toggle">
                             <i class="menu-icon tf-icons bx bxs-donate-heart"></i>
@@ -219,11 +256,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["submit"])) {
                                     <li class="menu-item">
                                         <a href="amedmissre.php" class="menu-link">
                                             <div class="text-truncate" data-i18n="Medical Mission">Medical Mission</div>
-                                        </a>
-                                    </li>
-                                    <li class="menu-item">
-                                        <a href="amedassre.php" class="menu-link">
-                                            <div class="text-truncate" data-i18n="Medical Assistance">Medical Assistance</div>
                                         </a>
                                     </li>
                                 </ul>

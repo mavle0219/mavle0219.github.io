@@ -5,41 +5,65 @@ session_start();
 
 $admin = $_SESSION['admin'];
 
-if (!isset($admin)) {
-  header('location:login.php');
-}
-
 $select_profile = $conn->prepare("SELECT * FROM `users` WHERE id = ?");
 $select_profile->execute([$admin]);
 $fetch_profile = $select_profile->fetch(PDO::FETCH_ASSOC);
 
-if (isset($_GET['id'])) {
-  $result = $conn->prepare('SELECT * FROM `users` WHERE id = ?');
-  $result->execute([$_GET['id']]);
-  $user = $result->fetch(PDO::FETCH_ASSOC);
+if (!isset($admin)) {
+  header('location:login.php');
+}
 
-  $result = $conn->prepare('DELETE FROM `users` WHERE id  = ?');
-  $result->execute([$_GET['id']]);
+// Function to calculate age from date of birth
+function calculateAge($dob)
+{
+  $today = new DateTime('today');
+  $birthdate = new DateTime($dob);
+  $age = $birthdate->diff($today)->y;
+  return $age;
+}
 
-  $auditlogin = $conn->prepare("INSERT INTO `audit`(role, username, action) VALUES(?,?,?)");
-  $auditlogin->execute(["admin", $fetch_profile['username'], "delete user"]);
+// Check if the archiving form was submitted
+if ($_SERVER["REQUEST_METHOD"] === "GET" && isset($_GET["ben_id"])) {
+  $benId = $_GET["ben_id"];
 
-  echo "<script>
-      document.addEventListener('DOMContentLoaded', (event) => {
-          Swal.fire({
-              icon: 'success',
-              title: 'Success',
-              text: 'User Deleted!',
-              showConfirmButton: false,
-              timer: 1000
-          }).then(function () {
-              window.location.href = 'auserlist.php';
-          });
-      });
-  </script>";
+  try {
+    // Check if the beneficiary exists
+    $stmt = $conn->prepare("SELECT * FROM `beneficiary` WHERE ben_id = ?");
+    $stmt->execute([$benId]);
+    $beneficiary = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($beneficiary) {
+      // Update the ben_arch column to 1
+      $stmtUpdate = $conn->prepare("UPDATE `beneficiary` SET ben_arch = 0 WHERE ben_id = ?");
+      $stmtUpdate->execute([$benId]);
+
+      // Audit log
+      $auditlogin = $conn->prepare("INSERT INTO `audit`(role, username, action) VALUES(?,?,?)");
+      $auditlogin->execute(["admin", $fetch_profile['username'], "restore beneficiary"]);
+
+      echo "<script>
+        document.addEventListener('DOMContentLoaded', (event) => {
+        Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: 'Beneficiary Restored!',
+            showConfirmButton: false,
+            timer: 1000
+        }).then(function () {
+            window.location.href = 'archben.php';
+        });
+        });
+      </script>";
+    } else {
+      echo "No record found with ben_id = $benId.";
+    }
+  } catch (PDOException $e) {
+    echo "Error: " . $e->getMessage();
+  }
 }
 
 ?>
+
 
 <!DOCTYPE html>
 
@@ -49,7 +73,7 @@ if (isset($_GET['id'])) {
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
 
-  <title>Users List</title>
+  <title>Beneficiaries Archives</title>
 
   <meta name="description" content="" />
 
@@ -76,8 +100,6 @@ if (isset($_GET['id'])) {
   <!-- Vendors CSS -->
   <link rel="stylesheet" href="../assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.css" />
   <link rel="stylesheet" href="../assets/vendor/libs/typeahead-js/typeahead.css" />
-  <link rel="stylesheet" href="../assets/vendor/libs/toastr/toastr.css" />
-  <link rel="stylesheet" href="../assets/vendor/libs/animate-css/animate.css" />
   <link rel="stylesheet" href="../assets/vendor/libs/apex-charts/apex-charts.css" />
 
   <!-- Page CSS -->
@@ -92,7 +114,6 @@ if (isset($_GET['id'])) {
 </head>
 
 <body>
-  
   <!-- Layout wrapper -->
   <div class="layout-wrapper layout-content-navbar">
     <div class="layout-container">
@@ -102,7 +123,7 @@ if (isset($_GET['id'])) {
         <div class="app-brand demo">
           <a href="adboard.php" class="app-brand-link">
             <span class="app-brand-logo demo">
-            <span class="app-brand-text demo menu-text fw-bold ms-2" style="text-transform: uppercase;">GSP MIS</span>
+              <span class="app-brand-text demo menu-text fw-bold ms-2" style="text-transform: uppercase;">GSP MIS</span>
           </a>
 
           <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto">
@@ -123,13 +144,13 @@ if (isset($_GET['id'])) {
           <li class="menu-header small text-uppercase">
             <span class="menu-header-text">Beneficiaries Management</span>
           </li>
-          <li class="menu-item">
+          <li class="menu-item active open">
             <a href="javascript:void(0);" class="menu-link menu-toggle">
               <i class="menu-icon tf-icons bx bx bx-list-check"></i>
               <div class="text-truncate" data-i18n="Beneficiaries">Beneficiaries</div>
             </a>
             <ul class="menu-sub">
-              <li class="menu-item">
+              <li class="menu-item open">
                 <a href="javascript:void(0);" class="menu-link menu-toggle">
                   <div class="text-truncate" data-i18n="Beneficiaries">Beneficiaries</div>
                 </a>
@@ -137,6 +158,11 @@ if (isset($_GET['id'])) {
                   <li class="menu-item">
                     <a href="abenlist.php" class="menu-link">
                       <div class="text-truncate" data-i18n="Beneficiaries List">Beneficiaries List</div>
+                    </a>
+                  </li>
+                  <li class="menu-item active">
+                    <a href="archben.php" class="menu-link">
+                      <div class="text-truncate" data-i18n="Beneficiaries Archives">Beneficiaries Archives</div>
                     </a>
                   </li>
                 </ul>
@@ -218,13 +244,13 @@ if (isset($_GET['id'])) {
             </ul>
           </li>
           <li class="menu-header small text-uppercase"><span class="menu-header-text">Users Management</span></li>
-          <li class="menu-item active open">
+          <li class="menu-item">
             <a href="javascript:void(0);" class="menu-link menu-toggle">
               <i class="menu-icon tf-icons bx bxs-user-rectangle"></i>
               <div class="text-truncate" data-i18n="Users">Users</div>
             </a>
             <ul class="menu-sub">
-              <li class="menu-item active">
+              <li class="menu-item">
                 <a href="auserlist.php" class="menu-link">
                   <div class="text-truncate" data-i18n="Users">Users</div>
                 </a>
@@ -261,7 +287,7 @@ if (isset($_GET['id'])) {
                   <input type="text" class="form-control border-0 shadow-none" placeholder="Search..." aria-label="Search..." name="keyword" value="<?php echo isset($_POST['keyword']) ? $_POST['keyword'] : '' ?>" autocomplete="off" />
                   <div class="btn-group" role="group">
                     <button class="btn btn-label-info" name="search">Search</button>
-                    <a href="auserlist.php" type="button" class="btn btn-label-info">Clear</a>
+                    <a href="archben.php" type="button" class="btn btn-label-info">Clear</a>
                   </div>
                 </div>
               </form>
@@ -305,7 +331,7 @@ if (isset($_GET['id'])) {
                       <div class="d-flex">
                         <div class="flex-shrink-0 me-3">
                           <div class="avatar avatar-online">
-                            <img src="../assets/img/avatars/admin.png" alt class="w-px-40 h-auto rounded-circle" />
+                            <img src="../assets/img/avatars/1.png" alt class="w-px-40 h-auto rounded-circle" />
                           </div>
                         </div>
                         <?php
@@ -345,103 +371,110 @@ if (isset($_GET['id'])) {
         <!-- Content wrapper -->
         <div class="content-wrapper">
           <div class="container-xxl flex-grow-1 container-p-y">
-            <h4 class="py-3 mb-4"><span class="text-muted fw-light">Users /</span> Users List</h4>
-              <div class="row g-4 mb-4">
-                <div class="col-sm-6 col-xl-3">
-                  <div class="card card-border-shadow-primary h-100">
-                    <div class="card-body">
-                      <div class="d-flex align-items-start justify-content-between">
-                        <div class="content-left">
-                          <span>Registered Users</span>
-                          <div class="d-flex align-items-end mt-2">
-                            <h4 class="mb-0 me-2"><?php $numbef = $conn->query("SELECT COUNT(*) FROM `users`")->fetchColumn(); echo $numbef; ?></h4>
-                          </div>
-                        </div>
-                        <div class="avatar">
-                          <span class="avatar-initial rounded bg-label-primary">
-                            <i class="bx bx-user bx-sm"></i>
-                          </span>
+            <h4 class="py-3 mb-4"><span class="text-muted fw-light">Beneficiaries /</span> Beneficiaries Archives</h4>
+            <div class="row g-4 mb-4">
+              <div class="col-sm-6 col-xl-3">
+                <div class="card card-border-shadow-primary h-100">
+                  <div class="card-body">
+                    <div class="d-flex align-items-start justify-content-between">
+                      <div class="content-left">
+                        <span>Total Beneficiaries</span>
+                        <div class="d-flex align-items-end mt-2">
+                          <h4 class="mb-0 me-2"><?php $numbef = $conn->query("SELECT COUNT(*) FROM `beneficiary`")->fetchColumn();
+                                                echo $numbef; ?></h4>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-                <div class="col-sm-6 col-xl-3">
-                  <div class="card card-border-shadow-danger h-100">
-                    <div class="card-body">
-                      <div class="d-flex align-items-start justify-content-between">
-                        <div class="content-left">
-                          <span>Administrators</span>
-                          <div class="d-flex align-items-end mt-2">
-                            <h4 class="mb-0 me-2"><?php $numbef = $conn->query("SELECT COUNT(*) FROM `users` where `role` = 'admin'")->fetchColumn(); echo $numbef; ?></h4>
-                          </div>
-                        </div>
-                        <div class="avatar">
-                          <span class="avatar-initial rounded bg-label-danger">
-                            <i class="bx bx-user-check bx-sm"></i>
-                          </span>
+              </div>
+              <div class="col-sm-6 col-xl-3">
+                <div class="card card-border-shadow-info h-100">
+                  <div class="card-body">
+                    <div class="d-flex align-items-start justify-content-between">
+                      <div class="content-left">
+                        <span>Archived Beneficiaries</span>
+                        <div class="d-flex align-items-end mt-2">
+                          <h4 class="mb-0 me-2"><?php $numbef = $conn->query('SELECT count(ben_age) FROM beneficiary where ben_arch = 1')->fetchColumn();
+                                                echo $numbef; ?></h4>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-                <div class="col-sm-6 col-xl-3">
-                  <div class="card card-border-shadow-success h-100">
-                    <div class="card-body">
-                      <div class="d-flex align-items-start justify-content-between">
-                        <div class="content-left">
-                          <span>Standard Users</span>
-                          <div class="d-flex align-items-end mt-2">
-                            <h4 class="mb-0 me-2"><?php $numbef = $conn->query("SELECT COUNT(*) FROM `users` where `role` = 'user'")->fetchColumn(); echo $numbef; ?></h4>
-                          </div>
-                        </div>
-                        <div class="avatar">
-                          <span class="avatar-initial rounded bg-label-success">
-                            <i class="bx bx-group bx-sm"></i>
-                          </span>
+              </div>
+              <div class="col-sm-6 col-xl-3">
+                <div class="card card-border-shadow-danger h-100">
+                  <div class="card-body">
+                    <div class="d-flex align-items-start justify-content-between">
+                      <div class="content-left">
+                        <span>Archived Senior Citizens</span>
+                        <div class="d-flex align-items-end mt-2">
+                          <h4 class="mb-0 me-2"><?php $numbef = $conn->query('SELECT count(ben_age) FROM beneficiary where ben_age > 60 and ben_arch = 1')->fetchColumn();
+                                                echo $numbef; ?></h4>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-          </div>
-          <ul class="nav nav-pills flex-column flex-md-row mb-3">
-              <a href="register.php" class="btn btn-label-success"><i class='bx bx-plus'>&nbsp</i>Register New User</a>
+              </div>
+              <div class="col-sm-6 col-xl-3">
+                <div class="card card-border-shadow-warning h-100">
+                  <div class="card-body">
+                    <div class="d-flex align-items-start justify-content-between">
+                      <div class="content-left">
+                        <span>Archived Unemployed</span>
+                        <div class="d-flex align-items-end mt-2">
+                          <h4 class="mb-0 me-2"><?php $numbef = $conn->query("SELECT COUNT(*) as count FROM beneficiary WHERE ben_emptype = 'unemployed' and ben_arch = 1")->fetchColumn();
+                                                echo $numbef; ?></h4>
+
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <ul class="nav nav-pills flex-column flex-md-row mb-3">
+              <button class="btn btn-label-primary" type="button" onclick="printTable()"><span><i class="bx bx-printer me-1"></i>Print</span></button>
+              <button class="btn btn-label-primary" type="button" onclick="downloadCSV()" style="margin-left: 10px;"><span><i class="bx bx-file me-1"></i>Export to Excel</span></button>
             </ul>
-          <div class="card">
+            <div class="card">
               <?php
-              include 'asusers.php';
+              include 'sarchben.php';
               ?>
             </div>
-          <!-- Footer -->
-          <footer class="content-footer footer bg-footer-theme">
-            <div class="container-xxl d-flex flex-wrap justify-content-between py-2 flex-md-row flex-column">
-              <div class="mb-2 mb-md-0">
-                ©
-                <script>
-                  document.write(new Date().getFullYear());
-                </script>
-                , made with ❤️ by Mavle (IT-05)
-              </div>
-              <div class="d-none d-lg-inline-block">The Good Shepherd Parish Web-Based Management Information System
-              </div>
-            </div>
-          </footer>
-          <!-- / Footer -->
-
-          <div class="content-backdrop fade"></div>
+          </div>
         </div>
-        <!-- Content wrapper -->
+
+        <!-- Footer -->
+        <footer class="content-footer footer bg-footer-theme">
+          <div class="container-xxl d-flex flex-wrap justify-content-between py-2 flex-md-row flex-column">
+            <div class="mb-2 mb-md-0">
+              ©
+              <script>
+                document.write(new Date().getFullYear());
+              </script>
+              , made with ❤️ by Mavle (IT-05)
+            </div>
+            <div class="d-none d-lg-inline-block">The Good Shepherd Parish Web-Based Management Information System
+            </div>
+          </div>
+        </footer>
+        <!-- / Footer -->
+
+        <div class="content-backdrop fade"></div>
       </div>
-      <!-- / Layout page -->
+      <!-- Content wrapper -->
     </div>
-
-    <!-- Overlay -->
-    <div class="layout-overlay layout-menu-toggle"></div>
-
-    <!-- Drag Target Area To SlideIn Menu On Small Screens -->
-    <div class="drag-target"></div>
+    <!-- / Layout page -->
   </div>
+
+  <!-- Overlay -->
+  <div class="layout-overlay layout-menu-toggle"></div>
+
+  <!-- Drag Target Area To SlideIn Menu On Small Screens -->
+  <div class="drag-target"></div>
   <!-- / Layout wrapper -->
 
   <!-- Core JS -->
@@ -460,7 +493,6 @@ if (isset($_GET['id'])) {
 
   <!-- Vendors JS -->
   <script src="../assets/vendor/libs/apex-charts/apexcharts.js"></script>
-  <script src="../assets/vendor/libs/toastr/toastr.js"></script>
   <script src="../assets/vendor/libs/sweetalert2/sweetalert2.js"></script>
 
   <!-- Main JS -->
@@ -468,13 +500,33 @@ if (isset($_GET['id'])) {
 
   <!-- Page JS -->
   <script src="../assets/js/dashboards-analytics.js"></script>
-  <script src="../assets/js/ui-toasts.js"></script>
   <script src="../assets/js/extended-ui-sweetalert2.js"></script>
 
   <script>
     function printTable() {
       var printWindow = window.open('', '', 'width=600,height=600');
-      var tableHtml = document.getElementById('data-table').outerHTML;
+      var table = document.getElementById('data-table');
+
+      // Clone the table to avoid modifying the original table
+      var clonedTable = table.cloneNode(true);
+
+      // Check if the last column is "Action" and remove it
+      var headerRow = clonedTable.querySelector('tr');
+      var headerCells = headerRow.getElementsByTagName('th');
+      if (headerCells[headerCells.length - 1].innerText.trim().toLowerCase() === 'action') {
+        var rows = clonedTable.getElementsByTagName('tr');
+        for (var i = 0; i < rows.length; i++) {
+          var cells = rows[i].getElementsByTagName('td');
+          if (cells.length > 0) {
+            // Remove the last cell in each row
+            cells[cells.length - 1].remove();
+          }
+        }
+        // Remove the last header cell
+        headerCells[headerCells.length - 1].remove();
+      }
+
+      var tableHtml = clonedTable.outerHTML;
 
       printWindow.document.write('<html><head><title>Print</title></head><body>');
       printWindow.document.write('<style>@media print{body{margin:0;}</style>');
@@ -495,9 +547,15 @@ if (isset($_GET['id'])) {
       rows.forEach(function(row) {
         var rowData = [];
         var cols = row.querySelectorAll('td, th');
-        cols.forEach(function(col) {
-          rowData.push(col.innerText);
-        });
+
+        // Exclude the last column ("Action")
+        for (var i = 0; i < cols.length - 1; i++) {
+          // Escape double quotes by replacing them with two double quotes
+          var cellData = cols[i].innerText.replace(/"/g, '""');
+          // Enclose the cell data in double quotes
+          rowData.push('"' + cellData + '"');
+        }
+
         csvContent += rowData.join(',') + '\r\n';
       });
 
